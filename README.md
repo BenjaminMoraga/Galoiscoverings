@@ -1,3 +1,3 @@
 # Galois Coverings
 
-Give information about intermediate coverings of a Galois covering
+Sagemath notebook that gives information about intermediate coverings of a Galois covering
