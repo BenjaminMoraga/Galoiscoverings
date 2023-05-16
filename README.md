@@ -1,3 +1,4 @@
 # Galois Coverings
 
-Sagemath notebook that gives information about intermediate coverings of a Galois covering
+Sagemath program which define a `GaloisCovering` class with methods that give
+information about intermediate coverings of a Galois covering.
