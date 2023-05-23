@@ -23,7 +23,7 @@ from functools import cache
 
 from sage.structure.sage_object import SageObject
 
-from .branch import BranchPoint, BranchValue
+from coverings.branch import BranchPoint, BranchValue
 
     
 class Covering:
