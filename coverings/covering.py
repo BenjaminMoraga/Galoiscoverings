@@ -19,100 +19,11 @@ AUTHORS:
 __version__ = "0.2"
 __author__ = "Benjamin Moraga"
 
-from functools import cached_property
+from functools import cache
 
 from sage.structure.sage_object import SageObject
 
-
-def RamificationType(SageObject):
-    r"""Type of a ramification point of a Galois covering"""
-    
-    def __init__(self, aut, stab, check=True):
-         """Type of a ramification point of a Galois covering
-
-         For a Galois covering with group of automorphisms equal to
-         ``aut``, represent the ramification type of a ramification
-         point with stabilizer equal to `stab`.
-
-         INPUT:
-
-         - ``aut`` -- a group
-         
-         - ``stab`` -- a cyclic subgroup of ``aut``
-
-         OUTPUT: a ramification type
-         """
-         if check:
-             if not isinstance(aut, PermutationGroup_generic):
-                 raise TypeError("aut is not a Permutation group")
-             if not isinstance(stab, PermutationGroup_generic):
-                 raise TypeError("aut is not a Permutation group")
-             if not stab.is_subgroup(aut):
-                 raise ValueError("stab is not a subgroup of aut")
-             if not stab.is_cyclic:
-                 raise ValueError("stab is not cyclic")
-
-         self.__aut = aut
-         self.__stab = stab
-
-    @cached_property
-    def gen(self):
-        """Return a generator of a stabilizer"""
-        return self.__stab.gen()
-
-    @cached_property
-    def type(self):
-        """Return the ramification type as a partition"""
-        return self.gen().cycle_type()
-
-    @cached_property
-    def mult(self):
-        """Return the multiplicity of the ramification point"""
-        return self.__stab.order()
-
-    @cached_property
-    def deg(self):
-        """Return the degree of the Galois covering"""
-        return self.__aut.order()
-
-    @cached_property
-    def orbit_cardinality(self):
-        """Return the cardinality of an orbit"""
-        return self.deg()/self.mult()
-
-    def _repr_(self):
-        """Represent the ramification type"""
-        return (
-            f"Ramification type {self.type()} with automorphism "
-            f"group {self._group}"
-        )
-         
-
-def ramification_types(group, include_trivial=False):
-    r"""Return the possible ramification types of a Galois covering
-
-    For a Galois covering between Riemann surfaces with group of
-    automorphisms equal to ``g``, the possible ramification types are
-    in 1-1 correspondence with conjugacy classes of cyclic subgroups
-    of ``g``; namely, its rational conjugacy classes.
-
-    INPUT:
-    
-    - ``group`` -- a group
-
-    - ``include_trivial`` -- boolean (default: ``False``); whether
-      the output includes the class of the trivial subgroup
-
-    OUTPUT: A list with the possible ramification types
-    """
-    subgroups = [subgroup for subgroup
-                    in group.conjugacy_classes_subgroups()
-                    if subgroup.is_cyclic()]
-    subgroups.sort(key=lambda subgroup: subgroup.order())
-    if include_trivial:
-        return subgroups
-    else:
-        return subgroups[1:]
+from .branch import BranchPoint, BranchValue
 
     
 class Covering:
@@ -121,21 +32,6 @@ class Covering:
         self.__mon = PermutationGroup(mon)
         if not self.__mon.is_transitive():
             raise ValueError("Generated group is not transitive")
-        pr = self.__mon([])
-        for i in range(genus):
-            pr *= (mon[2*i]*mon[2*i+1]*mon[2*i].inverse()
-                *mon[2*i+1].inverse())
-        print(pr)
-        for i in range(2*genus, len(mon)):
-            pr *= mon[i]
-        print(pr)
-        if pr == self.__mon([]):
-            self.__image_genus = genus
-            self.__degree = self.__mon.degree()
-            self.__total_ramification=sum(
-                sum(r-1 for r in sigma.t)
-                                           for perm in mon[2*genus:]])
-            self.__domain_genus = self.__degree*(genus-1)+1+
 
 
 class GaloisCovering:
