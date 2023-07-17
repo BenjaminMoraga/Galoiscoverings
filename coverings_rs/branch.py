@@ -1,3 +1,4 @@
+# -*- mode: sage
 r"""Sage definition for branch data of coverings of Riemann surfaces
 
 AUTHORS:
@@ -15,10 +16,6 @@ AUTHORS:
 #                  https://www.gnu.org/licenses/
 # ****************************************************************************
 
-#__all__ = ['a', 'b', 'c']
-__version__ = "0.2"
-__author__ = "Benjamin Moraga"
-
 from functools import cache
 
 from sage.structure.sage_object import SageObject
@@ -26,12 +23,33 @@ from sage.groups.perm_gps.permgroup import PermutationGroup_generic
 from sage.groups.perm_gps.permgroup_element import PermutationGroupElement
 from sage.rings.integer import Integer
 
+from coverings_rs.cover import _check_mon_group
+
 
 class BranchPoint(SageObject):
-    """Brach point of a covering of Riemann surfaces"""
+    """Brach point of a covering of Riemann surfaces
+
+    For a covering between compact Riemann surfaces `f\colon X \to Y`,
+    represent a point `x \in X` such that the multiplicity of `f` in `x`
+    is greater than 1.
+
+    EXAMPLES:
+
+    A branch point of multiplicity three::
+
+        sage: A = BranchPoint(3)
+        sage: A
+        
+    """
     
     def __init__(self, mult, check=True):
-        r"""Branch point of multiplicity ``mult``"""
+        """A branch point
+
+        INPUT: ``mult`` -- a positive integer; the multiplicity of
+        the branch point
+
+        
+        """
         if check:
             if not isinstance(mult, Integer):
                 raise TypeError("mult is not an Integer isntance")
@@ -85,6 +103,11 @@ class BranchValue(SageObject):
         return self.__type
 
     @cache
+    def mon_rep(self):
+        """Return the monodromy representation of the branch value"""
+        return self.__rep
+
+    @cache
     def preimages(self):
         """Return the preimages of the branch value"""
         return [BranchPoint(mult) for mult in self.__type]
@@ -110,3 +133,26 @@ class BranchValue(SageObject):
         "Return the hash of the branch value"
         return hash(self.__rep)
 
+
+def branch_value_types(mon_grp, check=True):
+    r"""Return branch values with essentially diferent monodromy
+
+    For a given group monodromy group `G`, return a list with one
+    branch value `b_i` for each rational conjugacy class `C_i` of
+    `G` such that `b_i` belongs to `C_i`.
+
+    INPUT:
+
+    - ``mon_grp`` -- a transitive permutation group
+
+    - ``check`` -- a boolean (default: ``True``); whether
+      ``mon_grp`` is checked as a possible monodromy group or not
+
+    OUTPUT: an interator of BranchValue instances
+    """
+
+    if check:
+        _check_mon_group(mon_grp)
+    return (BranchValue(subgroup.gen())
+            for subgroup in mon_grp.conjugacy_classes_subgroups()
+            if subgroup.is_cyclic())

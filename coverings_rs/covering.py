@@ -1,3 +1,4 @@
+# -*- mode: sage
 r"""Sage program that works with coverings of Riemann surfaces
 
 AUTHORS:
@@ -15,23 +16,139 @@ AUTHORS:
 #                  https://www.gnu.org/licenses/
 # ****************************************************************************
 
-#__all__ = ['a', 'b', 'c']
-__version__ = "0.2"
-__author__ = "Benjamin Moraga"
-
 from functools import cache
+from collections import Counter
 
 from sage.structure.sage_object import SageObject
+from sage.groups.perm_gps.permgroup import PermutationGroup_generic
+from sage.groups.perm_gps.permgroup_element import PermutationGroupElement
+from sage.rings.integer import Integer
+from sage.symbolic.expression import Expression
 
-from coverings.branch import BranchPoint, BranchValue
+from coverings_rs.branch import BranchPoint, BranchValue
 
     
-class Covering:
-    "A class for (ramified) coverings of Riemann surfaces."
-    def __init__(self, genus, mon):
-        self.__mon = PermutationGroup(mon)
-        if not self.__mon.is_transitive():
-            raise ValueError("Generated group is not transitive")
+class Covering(SageObject):
+    "A class for (ramified) coverings of Riemann surfaces"
+    
+    def __init__(self, *args, genus=None, check=True):
+        r"""Generate a (ramified) covering of Riemann surfaces
+
+        There are two different manners to initialize a Covering
+        `f\colon X \to Y` with branch locus `B`:
+        
+        - ``Covering(mon_rep, genus)``
+        
+        - ``Covering(mon_grp, branch_values, genus)``
+
+        INPUT:
+
+        - ``mon_rep`` -- iterable of permutations; the
+          permutations must be `r(a_1), r(b_1), \ldots, r(a_g),
+          r(b_g), r(c_1), \ldots, r(c_k)`, where `r` is the
+          monodromy representation of `f` and `a_1, b_1, \ldots,
+          a_n, b_n, c_1, \ldots, c_n` are the standard generators
+          of the fundamental group of `Y - B`.
+
+        - ``mon_grp`` -- permutation group; the monodromy group
+          of `f`, it must be a transitive group.
+
+        - ``branch_values`` -- iterable of numbers or variables
+          (default: `(n_1, \ldots, n_k)`); the number of branch
+          values with monodromy representation in each rational
+          conjugacy class of ``mon_grp`` in the order returned by
+          ``branch_value_types(mon_grp)``.
+
+        - ``genus`` -- integer or variable (default: `0` or `g`); the
+          genus of `Y`. If the first method of initialization is used,
+          the genus must be an integer and its default value is `0`;
+          if the second method is used it may be a variable and its
+          default value is `g`.
+
+        - ``check`` -- boolean (default: ``True``); whether the input
+          should be checked or not
+
+        OUTPUT: A covering
+        """
+
+        ### Implement the check
+        if len(args) == 0:
+            raise TypeError("mon_rep or mon_grp must be specified")
+        if len(args) > 3 or len(args) == 3 and genus is not None:
+            raise TypeError("More than 3 arguments were given")
+        if len(args) == 3 or len(args) == 2 and genus is not None:
+            mon_grp, branch_values = args[0 : 1]
+            genus = args[2] if len(args) == 3 else genus
+            mon_rep = None
+        elif len(args) == 2:
+            if isinstance(args[0], PermutationGroup_generic):
+                mon_grp, branch_values = args
+                mon_rep = None
+            else:
+                mon_rep, genus = args
+        elif len(args) == 1:
+            if isinstance(args[0], PermutationGroup_generic):
+                mon_grp = args[0]
+                branch_values = None
+                mon_rep = None
+            else:
+                mon_rep = args[0]
+                
+        if check:
+            if mon_rep is None:
+                if branch_values is not None:
+                    if not all(isinstance(elem, (Integer, Expression))
+                               for elem in branch_values):
+                        raise TypeError("Elements of branch_values must be "
+                                        "Integer or Expression")
+                    if any(num < 0 for num in
+                           branch_values if isinstance(num, Integer)):
+                        raise ValueError("Each Integer in branch_values "
+                                         "must be non negative")
+                if not isinstance(genus, (Integer, Expression, NoneType)):
+                    raise TypeError("genus must be an Integer or "
+                                    "an Expression")
+                _check_mon_group(mon_grp)
+            else:
+                mon_rep = tuple(mon_rep)
+                if not all(isinstance(perm, PermutationGroupElement)
+                           for perm in mon_rep):
+                    raise TypeError("Elements of mon_rep must be permutations")
+                if not isinstance(genus, (Integer, NoneType)):
+                    raise TypeError("genus must be an Integer if "
+                                    "mon_rep is given")
+            if isinstance(genus, Integer) and genus < 0:
+                raise ValueError("genus must be non negative")
+
+        if mon_rep is None:
+            self._mon = mon_grp
+            self._gY = (genus if genus is not None else
+                        SR.var("g", domain="integer"))
+            self._mon_rep = None
+            branch_types = branch_value_types(mon_grp)
+            if check and len(branch_values) != len(branch_types):
+                raise ValueError("branch_values must be of length "
+                                 f"{len(branch_types)} for the given mon_grp")
+            self._branch_values = dict(zip(branch_types, branch_values))
+        else:
+            self._mon = PermutationGroup(mon_rep)
+            _check_mon_group(self._mon)
+            self._mon_rep = mon_rep
+            self._gY = genus if genus is not None else Integer(0)
+            self._branch_values = {branch: 
+
+
+def _R_H(g, d, r):
+    "Riemann Hurwitz"
+    return d*(g-1)+1 + r/2
+
+
+def _check_mon_group(mon_grp):
+    "Check if a group can be a monodromy group"
+    if not isinstance(mon_grp, PermutationGroup_generic):
+        raise TypeError("mon_grp must be a PermutationGroup")
+    if not mon_grp.is_transitive():
+        raise ValueError("mon_grp must be transitive")
 
 
 class GaloisCovering:
@@ -309,3 +426,5 @@ class IntermediateCovering(GaloisCovering):
         self._InducedRamification = InducedRamification
         self._InducedTotalRamification = InducedTotalRamification
         self._InducedRamificationData = InducedRamificationData
+
+Alter
