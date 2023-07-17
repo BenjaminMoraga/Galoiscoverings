@@ -1,0 +1,26 @@
+#+title: TODO of coverings_rs
+#+author: Benjamín Moraga
+#+STARTUP: latexpreview
+
+* Needs for v1.0
+
+** A good [[file:README.md][README]] file
+
+** [[file:coverings_rs/branch.py][branch.py]]
+- [X] v1.0
+  - [X] BranchValue
+  - [X] BranchPoint
+  - [X] branch_value_types
+    
+** [[file:coverings_rs/covering.py][covering.py]]
+- [-] v1.0
+  - [-] Covering
+  - [ ] Galois Covering
+  - [ ] Intermediate Covering
+  - [ ] Monodromy Group
+    
+** [[file:coverings_rs/rational_conjugacy.py][rational_conjugacy.py]]
+- [X] v1.0
+  - [X] Rational Conjugacy Class
+  - [X] Rational conjugacy classes of a group
+  - [X] are_rational_conjugates
